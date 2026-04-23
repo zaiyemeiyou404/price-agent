@@ -61,7 +61,7 @@ async def debug_taobao_search(query: str):
             print(f"   已加载 {len(cookies)} 条 Cookie")
         else:
             print(f"2. 未找到 Cookie 文件: {cookie_file}")
-            print("   请先运行: python login.py taobao qr")
+            print("   请先运行: python scripts/login/login.py taobao qr")
         
         # 先访问首页
         print("\n3. 访问淘宝首页...")
@@ -78,7 +78,7 @@ async def debug_taobao_search(query: str):
             login_btn = await page.query_selector("text=登录")
             if login_btn:
                 print("   ⚠ 未登录或登录已过期！")
-                print("   请运行: python login.py taobao qr")
+                print("   请运行: python scripts/login/login.py taobao qr")
             else:
                 # 尝试获取用户名
                 user_selectors = [

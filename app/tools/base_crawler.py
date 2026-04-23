@@ -385,7 +385,7 @@ class BaseCrawler:
         
         if not cookie_file.exists():
             logger.warning(f"⚠ 未找到Cookie文件: {cookie_file}")
-            logger.warning(f"⚠ 请先运行登录脚本: python login.py {name} qr")
+            logger.warning(f"⚠ 请先运行登录脚本: python scripts/login/login.py {name} qr")
             return False
         
         try:

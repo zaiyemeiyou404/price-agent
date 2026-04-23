@@ -174,7 +174,7 @@ class TaobaoTool(BaseTool, BaseCrawler):
             cookies_loaded = await self._load_cookies()
             if not cookies_loaded:
                 logger.warning("[淘宝] ⚠ 未加载Cookie，搜索结果可能受限")
-                logger.warning("[淘宝] 请运行: python login.py taobao qr")
+                logger.warning("[淘宝] 请运行: python scripts/login/login.py taobao qr")
 
             try:
                 await page.goto("https://www.taobao.com", wait_until="domcontentloaded", timeout=60000)
@@ -554,7 +554,7 @@ class TaobaoTool(BaseTool, BaseCrawler):
             price = 0.0
             all_text = ""
 
-            # 方法0: 组合 priceInt + priceFloat（参考 taobao_only.py）
+            # 方法0: 组合 priceInt + priceFloat（参考 scripts/debug/taobao_only.py）
             try:
                 price_int = await self._safe_extract_text(item, "[class*='priceInt']")
                 price_float = await self._safe_extract_text(item, "[class*='priceFloat']")

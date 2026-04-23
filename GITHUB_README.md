@@ -27,6 +27,7 @@ price-agent/
 |   +-- config.py       # Runtime settings
 |   +-- main.py         # FastAPI application entry
 +-- postman/            # Postman collection and local environment
++-- scripts/            # Debug, login, and manual test scripts
 +-- cookies/            # Runtime crawler cookies
 +-- debug_output/       # Debug artifacts
 +-- index.html          # Frontend page
@@ -195,19 +196,19 @@ Suggested test order:
 Run a crawler debug command:
 
 ```bash
-python debug_crawler.py taobao "iPhone 15"
+python scripts/debug/debug_crawler.py taobao "iPhone 15"
 ```
 
 Run with a visible browser:
 
 ```bash
-python debug_crawler.py taobao "iPhone 15" --no-headless
+python scripts/debug/debug_crawler.py taobao "iPhone 15" --no-headless
 ```
 
 Run with screenshot output:
 
 ```bash
-python debug_crawler.py taobao "iPhone 15" --screenshot
+python scripts/debug/debug_crawler.py taobao "iPhone 15" --screenshot
 ```
 
 Other crawler scripts in the repository are development and debugging utilities. Keep generated HTML snapshots, screenshots, cookies, and debug output out of version control unless they are intentionally added as test fixtures.

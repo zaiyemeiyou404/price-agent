@@ -26,7 +26,7 @@ async def main():
     # 检查Cookie文件
     cookie_file = COOKIE_DIR / "jd_cookies.json"
     if not cookie_file.exists():
-        print("错误: 未找到Cookie文件，请先运行 jd_login.py 登录")
+        print("错误: 未找到Cookie文件，请先运行 python scripts/login/jd_login.py 登录")
         return
     
     with open(cookie_file, 'r', encoding='utf-8') as f:

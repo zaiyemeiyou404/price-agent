@@ -97,7 +97,7 @@ class JDTool(BaseTool, BaseCrawler):
             cookies_loaded = await self._load_cookies()
             if not cookies_loaded:
                 logger.warning("[京东] ⚠ 未加载Cookie，搜索结果可能受限")
-                logger.warning("[京东] 请运行: python login.py jd qr")
+                logger.warning("[京东] 请运行: python scripts/login/login.py jd qr")
             
             # 访问京东首页建立会话
             try:
@@ -109,7 +109,7 @@ class JDTool(BaseTool, BaseCrawler):
             # 检测是否需要登录
             if await self._check_login_required():
                 logger.warning("[京东] ⚠ 检测到需要登录！")
-                logger.warning("[京东] 请运行: python login.py jd qr")
+                logger.warning("[京东] 请运行: python scripts/login/login.py jd qr")
             
             # 搜索URL
             url = f"https://search.jd.com/Search?keyword={quote(query)}"

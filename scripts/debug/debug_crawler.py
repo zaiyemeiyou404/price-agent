@@ -5,11 +5,11 @@
 用于测试和调试各个平台的爬虫功能
 
 用法:
-    python debug_crawler.py taobao "iPhone 15"
-    python debug_crawler.py jd "华为手机"
-    python debug_crawler.py meituan "肯德基" --lat 39.9042 --lng 116.4074
-    python debug_crawler.py eleme "麦当劳"
-    python debug_crawler.py pdd "耳机"
+    python scripts/debug/debug_crawler.py taobao "iPhone 15"
+    python scripts/debug/debug_crawler.py jd "华为手机"
+    python scripts/debug/debug_crawler.py meituan "肯德基" --lat 39.9042 --lng 116.4074
+    python scripts/debug/debug_crawler.py eleme "麦当劳"
+    python scripts/debug/debug_crawler.py pdd "耳机"
 """
 import asyncio
 import argparse

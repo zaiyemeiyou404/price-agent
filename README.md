@@ -58,16 +58,16 @@ curl -X POST http://localhost:8000/api/v1/compare \
 
 ```bash
 # 测试单个爬虫
-python debug_crawler.py taobao "iPhone 15"
-python debug_crawler.py jd "华为手机"
-python debug_crawler.py pdd "耳机"
-python debug_crawler.py meituan "肯德基套餐" --lat 39.9042 --lng 116.4074
+python scripts/debug/debug_crawler.py taobao "iPhone 15"
+python scripts/debug/debug_crawler.py jd "华为手机"
+python scripts/debug/debug_crawler.py pdd "耳机"
+python scripts/debug/debug_crawler.py meituan "肯德基套餐" --lat 39.9042 --lng 116.4074
 
 # 非无头模式（可看到浏览器操作）
-python debug_crawler.py taobao "iPhone 15" --no-headless
+python scripts/debug/debug_crawler.py taobao "iPhone 15" --no-headless
 
 # 截图模式（调试页面结构）
-python debug_crawler.py taobao "iPhone 15" --screenshot
+python scripts/debug/debug_crawler.py taobao "iPhone 15" --screenshot
 ```
 
 ## 说明

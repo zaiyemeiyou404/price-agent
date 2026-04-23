@@ -6,10 +6,10 @@
 登录成功后自动保存 Cookie 到 cookies/ 目录。
 
 用法:
-    python login.py taobao qr        # 淘宝扫码登录
-    python login.py taobao password  # 淘宝账号密码登录
-    python login.py jd qr            # 京东扫码登录
-    python login.py all qr           # 全部平台扫码登录
+    python scripts/login/login.py taobao qr        # 淘宝扫码登录
+    python scripts/login/login.py taobao password  # 淘宝账号密码登录
+    python scripts/login/login.py jd qr            # 京东扫码登录
+    python scripts/login/login.py all qr           # 全部平台扫码登录
 """
 import asyncio
 import json
@@ -491,7 +491,7 @@ def print_usage():
 淘宝/京东登录工具
 
 用法:
-    python login.py <平台> <模式> [选项]
+    python scripts/login/login.py <平台> <模式> [选项]
 
 平台:
     taobao     淘宝
@@ -507,11 +507,11 @@ def print_usage():
     --password, -p    密码
 
 示例:
-    python login.py taobao qr                    # 淘宝扫码登录
-    python login.py jd qr                        # 京东扫码登录
-    python login.py all qr                       # 全部平台扫码登录
-    python login.py taobao password -u 手机号 -p 密码   # 淘宝账号密码登录
-    python login.py jd password -u 用户名 -p 密码       # 京东账号密码登录
+    python scripts/login/login.py taobao qr                    # 淘宝扫码登录
+    python scripts/login/login.py jd qr                        # 京东扫码登录
+    python scripts/login/login.py all qr                       # 全部平台扫码登录
+    python scripts/login/login.py taobao password -u 手机号 -p 密码   # 淘宝账号密码登录
+    python scripts/login/login.py jd password -u 用户名 -p 密码       # 京东账号密码登录
 
 注意:
     - 扫码登录更稳定，推荐使用
