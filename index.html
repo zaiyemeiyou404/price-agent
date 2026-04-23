@@ -1,0 +1,784 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Price Agent 可视化比价台</title>
+    <style>
+        :root {
+            --bg-a: #f7efe0;
+            --bg-b: #f6f9ff;
+            --ink-0: #1f2533;
+            --ink-1: #334057;
+            --ink-2: #67748a;
+            --line: #d7dfef;
+            --ok: #1f9d62;
+            --warn: #dd7f23;
+            --danger: #c43c3c;
+            --card: #ffffff;
+            --shadow: 0 14px 38px rgba(29, 40, 63, 0.12);
+            --radius-lg: 18px;
+            --radius-md: 12px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: "Avenir Next", "PingFang SC", "Microsoft YaHei", sans-serif;
+            color: var(--ink-0);
+            min-height: 100vh;
+            background:
+                radial-gradient(circle at 5% 0%, #fcd9b5 0%, transparent 33%),
+                radial-gradient(circle at 97% 3%, #cfe1ff 0%, transparent 36%),
+                linear-gradient(150deg, var(--bg-a), var(--bg-b));
+            padding: 22px;
+        }
+
+        .layout {
+            max-width: 1280px;
+            margin: 0 auto;
+            display: grid;
+            gap: 14px;
+            grid-template-columns: 2fr 1fr;
+            grid-template-areas:
+                "head head"
+                "main side";
+        }
+
+        .panel {
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+
+        .head {
+            grid-area: head;
+            padding: 18px 20px;
+            display: grid;
+            gap: 16px;
+            background:
+                linear-gradient(120deg, rgba(255, 116, 57, 0.08), transparent 35%),
+                linear-gradient(250deg, rgba(33, 122, 237, 0.08), transparent 45%),
+                #fff;
+        }
+
+        .headline {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .title {
+            font-size: 28px;
+            letter-spacing: 0.4px;
+            font-weight: 800;
+        }
+
+        .sub {
+            margin-top: 4px;
+            color: var(--ink-2);
+            font-size: 13px;
+        }
+
+        .status {
+            border-radius: 999px;
+            padding: 8px 12px;
+            border: 1px solid var(--line);
+            background: #edf4ff;
+            font-size: 12px;
+            color: var(--ink-1);
+            white-space: nowrap;
+        }
+
+        .control {
+            display: grid;
+            gap: 10px;
+        }
+
+        .search-row {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 10px;
+        }
+
+        .input {
+            width: 100%;
+            border: 2px solid #cfdaed;
+            border-radius: var(--radius-md);
+            padding: 12px 14px;
+            font-size: 15px;
+            color: var(--ink-0);
+            background: #fbfdff;
+        }
+
+        .input:focus {
+            outline: none;
+            border-color: #3378dc;
+            box-shadow: 0 0 0 3px rgba(51, 120, 220, 0.12);
+        }
+
+        .btn {
+            border: none;
+            border-radius: var(--radius-md);
+            background: linear-gradient(135deg, #f57231, #ec9f45);
+            color: #fff;
+            font-weight: 700;
+            font-size: 14px;
+            min-height: 46px;
+            min-width: 120px;
+            cursor: pointer;
+        }
+
+        .btn:disabled { opacity: 0.65; cursor: not-allowed; }
+
+        .chips {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 7px 11px;
+            border-radius: 999px;
+            border: 1px solid #cfd8ea;
+            background: #f8fbff;
+            font-size: 12px;
+            color: var(--ink-1);
+        }
+
+        .chip.off {
+            opacity: 0.5;
+            background: #f1f4fa;
+        }
+
+        .badge {
+            width: 20px;
+            height: 20px;
+            border-radius: 999px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 10px;
+            font-weight: 700;
+        }
+
+        .error {
+            display: none;
+            border: 1px solid #f2c2c2;
+            border-radius: 10px;
+            background: #fff1f1;
+            color: var(--danger);
+            padding: 10px 12px;
+            font-size: 13px;
+        }
+
+        .error.show { display: block; }
+
+        .main { grid-area: main; display: grid; gap: 12px; }
+        .side { grid-area: side; display: grid; gap: 12px; }
+
+        .card-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 14px;
+            border-bottom: 1px solid #edf1f8;
+        }
+
+        .card-title {
+            font-size: 15px;
+            font-weight: 800;
+            color: var(--ink-1);
+        }
+
+        .card-sub {
+            font-size: 12px;
+            color: var(--ink-2);
+        }
+
+        .kpis {
+            padding: 14px;
+            display: grid;
+            gap: 10px;
+            grid-template-columns: repeat(4, minmax(110px, 1fr));
+        }
+
+        .kpi {
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            padding: 10px;
+            background: #f9fbff;
+        }
+
+        .kpi .key { font-size: 11px; color: var(--ink-2); }
+        .kpi .val { margin-top: 4px; font-size: 17px; font-weight: 800; }
+
+        .summary-text {
+            padding: 0 14px 14px;
+            color: var(--ink-2);
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .bars {
+            padding: 14px;
+            display: grid;
+            gap: 9px;
+        }
+
+        .bar-row { display: grid; gap: 6px; }
+
+        .bar-meta {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: var(--ink-1);
+        }
+
+        .bar-track {
+            width: 100%;
+            height: 10px;
+            border-radius: 999px;
+            background: #edf2fb;
+            overflow: hidden;
+        }
+
+        .bar-fill {
+            height: 100%;
+            border-radius: 999px;
+            width: 0;
+            transition: width 0.35s ease;
+        }
+
+        .products {
+            padding: 14px;
+            display: grid;
+            gap: 10px;
+            grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+        }
+
+        .product {
+            border: 1px solid #d9e1f0;
+            border-radius: 12px;
+            overflow: hidden;
+            background: #fff;
+            display: grid;
+            grid-template-rows: 150px auto;
+        }
+
+        .product img {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+            background: #eef2f7;
+        }
+
+        .product-body {
+            padding: 10px;
+            display: grid;
+            gap: 6px;
+        }
+
+        .product-title {
+            font-size: 13px;
+            color: var(--ink-1);
+            line-height: 1.38;
+            height: 36px;
+            overflow: hidden;
+        }
+
+        .price {
+            font-size: 20px;
+            font-weight: 800;
+            color: #ca3b2e;
+        }
+
+        .meta { font-size: 11px; color: var(--ink-2); }
+
+        .link {
+            font-size: 12px;
+            color: #2f6fd8;
+            text-decoration: none;
+        }
+
+        .history {
+            padding: 10px;
+            max-height: 520px;
+            overflow: auto;
+            display: grid;
+            gap: 8px;
+        }
+
+        .history-item {
+            border: 1px solid #d9e1ef;
+            border-radius: 10px;
+            padding: 8px;
+            background: #fbfdff;
+            display: grid;
+            gap: 4px;
+            font-size: 12px;
+            color: var(--ink-1);
+        }
+
+        .conn {
+            padding: 12px;
+            display: grid;
+            gap: 8px;
+        }
+
+        .conn-item {
+            border: 1px solid #d9e2f0;
+            border-radius: 10px;
+            padding: 10px;
+            background: #fff;
+            display: grid;
+            gap: 4px;
+            font-size: 12px;
+        }
+
+        .state-pill {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .on { background: #e8f7ef; color: var(--ok); }
+        .off { background: #fff2e8; color: var(--warn); }
+
+        .empty {
+            padding: 18px;
+            text-align: center;
+            color: var(--ink-2);
+            font-size: 13px;
+        }
+
+        @media (max-width: 980px) {
+            .layout {
+                grid-template-columns: 1fr;
+                grid-template-areas:
+                    "head"
+                    "main"
+                    "side";
+            }
+            .kpis { grid-template-columns: 1fr 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="layout">
+        <section class="panel head">
+            <div class="headline">
+                <div>
+                    <h1 class="title">Price Agent 可视化比价台</h1>
+                    <p class="sub">淘宝已接入，京东/拼多多接口位已预留，可直接扩展到多平台并行比价。</p>
+                </div>
+                <div id="healthBadge" class="status">后端状态: 检测中...</div>
+            </div>
+
+            <div class="control">
+                <div class="search-row">
+                    <input id="queryInput" class="input" value="iPhone 15" placeholder="输入商品关键词，例如 iPhone 15 / 小米耳机 / 机械键盘">
+                    <button id="searchBtn" class="btn" type="button">开始比价</button>
+                </div>
+                <div id="platformChips" class="chips"></div>
+                <div id="errorBox" class="error"></div>
+            </div>
+        </section>
+
+        <section class="main">
+            <section class="panel">
+                <div class="card-head">
+                    <div class="card-title">结果概览</div>
+                    <div id="modeText" class="card-sub"></div>
+                </div>
+                <div id="kpiGrid" class="kpis"></div>
+                <div id="summaryText" class="summary-text"></div>
+            </section>
+
+            <section class="panel">
+                <div class="card-head">
+                    <div class="card-title">平台低价雷达</div>
+                    <div class="card-sub">按当前查询结果聚合</div>
+                </div>
+                <div id="priceBars" class="bars"></div>
+            </section>
+
+            <section class="panel">
+                <div class="card-head">
+                    <div class="card-title">商品卡片</div>
+                    <div id="productCount" class="card-sub">0 条</div>
+                </div>
+                <div id="productGrid" class="products"></div>
+            </section>
+        </section>
+
+        <aside class="side">
+            <section class="panel">
+                <div class="card-head">
+                    <div class="card-title">查询历史</div>
+                    <div class="card-sub">本地保存最近 20 条</div>
+                </div>
+                <div id="historyList" class="history"></div>
+            </section>
+
+            <section class="panel">
+                <div class="card-head">
+                    <div class="card-title">平台接入面板</div>
+                    <div class="card-sub">后续可无缝增加适配器</div>
+                </div>
+                <div id="connectorList" class="conn"></div>
+            </section>
+        </aside>
+    </div>
+
+    <script>
+        const API_BASE = "http://127.0.0.1:8000";
+        const HISTORY_KEY = "price_agent_history_v2";
+
+        const state = {
+            mode: { taobao_only_mode: true, api_mode: false },
+            enabledPlatforms: [],
+            allPlatforms: [],
+            meta: {},
+            selected: new Set(),
+            history: []
+        };
+
+        const el = {
+            healthBadge: document.getElementById("healthBadge"),
+            queryInput: document.getElementById("queryInput"),
+            searchBtn: document.getElementById("searchBtn"),
+            platformChips: document.getElementById("platformChips"),
+            errorBox: document.getElementById("errorBox"),
+            modeText: document.getElementById("modeText"),
+            kpiGrid: document.getElementById("kpiGrid"),
+            summaryText: document.getElementById("summaryText"),
+            priceBars: document.getElementById("priceBars"),
+            productCount: document.getElementById("productCount"),
+            productGrid: document.getElementById("productGrid"),
+            historyList: document.getElementById("historyList"),
+            connectorList: document.getElementById("connectorList")
+        };
+
+        function esc(v) {
+            return String(v || "")
+                .replaceAll("&", "&amp;")
+                .replaceAll("<", "&lt;")
+                .replaceAll(">", "&gt;")
+                .replaceAll('"', "&quot;")
+                .replaceAll("'", "&#39;");
+        }
+
+        function formatPrice(v) {
+            const n = Number(v);
+            return Number.isFinite(n) ? `¥${n.toFixed(2)}` : "-";
+        }
+
+        function showError(msg) {
+            el.errorBox.textContent = msg;
+            el.errorBox.classList.add("show");
+        }
+
+        function clearError() {
+            el.errorBox.classList.remove("show");
+            el.errorBox.textContent = "";
+        }
+
+        function colorOf(platform) {
+            return state.meta[platform]?.color || "#3f78e2";
+        }
+
+        function labelOf(platform) {
+            return state.meta[platform]?.label || platform;
+        }
+
+        function iconOf(platform) {
+            return state.meta[platform]?.icon || platform.slice(0, 2).toUpperCase();
+        }
+
+        function loadHistory() {
+            try {
+                const raw = localStorage.getItem(HISTORY_KEY);
+                state.history = raw ? JSON.parse(raw) : [];
+            } catch {
+                state.history = [];
+            }
+        }
+
+        function saveHistory() {
+            localStorage.setItem(HISTORY_KEY, JSON.stringify(state.history.slice(0, 20)));
+        }
+
+        function pushHistory(item) {
+            state.history.unshift(item);
+            state.history = state.history.slice(0, 20);
+            saveHistory();
+            renderHistory();
+        }
+
+        function renderModeText() {
+            const modeBits = [];
+            modeBits.push(state.mode.api_mode ? "API 模式" : "纯爬虫模式");
+            modeBits.push(state.mode.taobao_only_mode ? "单平台稳定模式" : "多平台模式");
+            el.modeText.textContent = modeBits.join(" / ");
+        }
+
+        function renderChips() {
+            const html = state.allPlatforms.map((p) => {
+                const enabled = state.enabledPlatforms.includes(p);
+                const checked = state.selected.has(p) ? "checked" : "";
+                return `
+                    <label class="chip ${enabled ? "" : "off"}" title="${enabled ? "可用" : "待接入"}">
+                        <input type="checkbox" data-platform="${esc(p)}" ${checked} ${enabled ? "" : "disabled"}>
+                        <span class="badge" style="background:${colorOf(p)}">${esc(iconOf(p))}</span>
+                        <span>${esc(labelOf(p))}</span>
+                    </label>
+                `;
+            }).join("");
+
+            el.platformChips.innerHTML = html;
+            el.platformChips.querySelectorAll("input[data-platform]").forEach((i) => {
+                i.addEventListener("change", (e) => {
+                    const p = e.target.getAttribute("data-platform");
+                    if (e.target.checked) state.selected.add(p);
+                    else state.selected.delete(p);
+                });
+            });
+        }
+
+        function renderConnectors() {
+            const list = state.allPlatforms.length ? state.allPlatforms : ["taobao", "jd", "pdd"];
+            el.connectorList.innerHTML = list.map((p) => {
+                const enabled = state.enabledPlatforms.includes(p);
+                const status = enabled ? "已接入" : "待接入";
+                const statusClass = enabled ? "on" : "off";
+                const adapter = `adapter.${p}.search()`;
+                const endpoint = `/api/v1/compare -> platforms:[\"${p}\"]`;
+                return `
+                    <article class="conn-item">
+                        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+                            <strong>${esc(labelOf(p))}</strong>
+                            <span class="state-pill ${statusClass}">${status}</span>
+                        </div>
+                        <div>适配器: <code>${esc(adapter)}</code></div>
+                        <div>请求位: <code>${esc(endpoint)}</code></div>
+                    </article>
+                `;
+            }).join("");
+        }
+
+        function renderHistory() {
+            if (!state.history.length) {
+                el.historyList.innerHTML = `<div class="empty">暂无历史查询</div>`;
+                return;
+            }
+            el.historyList.innerHTML = state.history.map((h) => `
+                <article class="history-item">
+                    <div><strong>${esc(h.query)}</strong></div>
+                    <div>平台: ${esc((h.platforms || []).join(", ") || "-")}</div>
+                    <div>结果: ${esc(String(h.count))} 条 | 最低价: ${esc(h.minPrice || "-")}</div>
+                    <div>${esc(h.time)}</div>
+                </article>
+            `).join("");
+        }
+
+        function renderEmptyBoards() {
+            el.kpiGrid.innerHTML = [
+                ["商品数", "0"],
+                ["最低价", "-"],
+                ["最高价", "-"],
+                ["推荐平台", "-"]
+            ].map((x) => `<div class="kpi"><div class="key">${x[0]}</div><div class="val">${x[1]}</div></div>`).join("");
+            el.summaryText.textContent = "输入关键词后点击“开始比价”。";
+            el.priceBars.innerHTML = `<div class="empty">暂无平台价格数据</div>`;
+            el.productGrid.innerHTML = `<div class="empty">暂无商品卡片</div>`;
+            el.productCount.textContent = "0 条";
+        }
+
+        function renderResult(result) {
+            const products = Array.isArray(result.products) ? result.products : [];
+            const prices = products
+                .map((p) => Number(p.final_price ?? p.price))
+                .filter((n) => Number.isFinite(n) && n > 0);
+
+            const minPrice = prices.length ? Math.min(...prices) : null;
+            const maxPrice = prices.length ? Math.max(...prices) : null;
+            const bestPlatform = result.best_deal?.platform ? labelOf(result.best_deal.platform) : "-";
+
+            const kpis = [
+                ["商品数", String(products.length)],
+                ["最低价", minPrice !== null ? formatPrice(minPrice) : "-"],
+                ["最高价", maxPrice !== null ? formatPrice(maxPrice) : "-"],
+                ["推荐平台", bestPlatform]
+            ];
+            el.kpiGrid.innerHTML = kpis.map((x) => `<div class="kpi"><div class="key">${esc(x[0])}</div><div class="val">${esc(x[1])}</div></div>`).join("");
+            el.summaryText.textContent = result.summary || "比价完成";
+
+            const byPlatform = {};
+            products.forEach((p) => {
+                const key = p.platform || "unknown";
+                const price = Number(p.final_price ?? p.price);
+                if (!Number.isFinite(price) || price <= 0) return;
+                byPlatform[key] = Math.min(byPlatform[key] ?? Infinity, price);
+            });
+
+            const entries = Object.entries(byPlatform);
+            if (!entries.length) {
+                el.priceBars.innerHTML = `<div class="empty">暂无平台价格数据</div>`;
+            } else {
+                const maxVal = Math.max(...entries.map((x) => x[1]));
+                el.priceBars.innerHTML = entries
+                    .sort((a, b) => a[1] - b[1])
+                    .map(([platform, value]) => {
+                        const width = maxVal > 0 ? Math.max((value / maxVal) * 100, 8) : 8;
+                        return `
+                            <div class="bar-row">
+                                <div class="bar-meta">
+                                    <span>${esc(labelOf(platform))}</span>
+                                    <strong>${esc(formatPrice(value))}</strong>
+                                </div>
+                                <div class="bar-track">
+                                    <div class="bar-fill" style="width:${width}%;background:${colorOf(platform)}"></div>
+                                </div>
+                            </div>
+                        `;
+                    }).join("");
+            }
+
+            if (!products.length) {
+                el.productGrid.innerHTML = `<div class="empty">当前查询未返回商品</div>`;
+                el.productCount.textContent = "0 条";
+            } else {
+                const cards = products.slice(0, 24).map((p) => {
+                    const title = esc(p.title || "-");
+                    const price = formatPrice(Number(p.final_price ?? p.price));
+                    const shop = esc(p.shop_name || "");
+                    const platform = esc(labelOf(p.platform || "unknown"));
+                    const sales = Number(p.sales || 0);
+                    const url = esc(p.jump_url || "");
+                    const img = esc(p.image_url || "");
+                    return `
+                        <article class="product">
+                            <img src="${img}" alt="${title}" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'320\' height=\'150\'%3E%3Crect width=\'320\' height=\'150\' fill=\'%23ecf1fb\'/%3E%3Ctext x=\'160\' y=\'80\' text-anchor=\'middle\' fill=\'%23889ab9\' font-size=\'14\'%3EN/A%3C/text%3E%3C/svg%3E';">
+                            <div class="product-body">
+                                <div class="product-title">${title}</div>
+                                <div class="price">${esc(price)}</div>
+                                <div class="meta">${platform}${shop ? ` | ${shop}` : ""}${sales > 0 ? ` | 销量 ${sales}` : ""}</div>
+                                ${url ? `<a class="link" href="${url}" target="_blank" rel="noopener noreferrer">查看商品</a>` : ""}
+                            </div>
+                        </article>
+                    `;
+                }).join("");
+                el.productGrid.innerHTML = cards;
+                el.productCount.textContent = `${products.length} 条`;
+            }
+
+            const now = new Date();
+            pushHistory({
+                query: result.query || el.queryInput.value.trim(),
+                platforms: Array.from(state.selected),
+                count: products.length,
+                minPrice: minPrice !== null ? formatPrice(minPrice) : "-",
+                time: now.toLocaleString()
+            });
+        }
+
+        async function loadHealth() {
+            try {
+                const res = await fetch(`${API_BASE}/health`);
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                el.healthBadge.textContent = "后端状态: 在线";
+                el.healthBadge.style.background = "#e9f8ef";
+                el.healthBadge.style.color = "#1d8a56";
+            } catch {
+                el.healthBadge.textContent = "后端状态: 离线";
+                el.healthBadge.style.background = "#ffeeee";
+                el.healthBadge.style.color = "#b73a3a";
+                showError("后端不可用，请先启动服务: uvicorn app.main:app --reload");
+            }
+        }
+
+        async function loadCapabilities() {
+            const res = await fetch(`${API_BASE}/api/v1/capabilities`);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const data = await res.json();
+
+            state.mode = data.mode || state.mode;
+            state.enabledPlatforms = data.enabled_platforms || [];
+            state.allPlatforms = data.all_platforms || [];
+            state.meta = data.platform_meta || {};
+
+            if (!state.selected.size) {
+                state.enabledPlatforms.forEach((p) => state.selected.add(p));
+            }
+
+            renderModeText();
+            renderChips();
+            renderConnectors();
+        }
+
+        async function searchCompare() {
+            clearError();
+            const query = el.queryInput.value.trim();
+            const platforms = Array.from(state.selected).filter((p) => state.enabledPlatforms.includes(p));
+
+            if (!query) {
+                showError("请输入商品关键词");
+                return;
+            }
+            if (!platforms.length) {
+                showError("请至少选择一个可用平台");
+                return;
+            }
+
+            el.searchBtn.disabled = true;
+            el.searchBtn.textContent = "比价中...";
+
+            try {
+                const res = await fetch(`${API_BASE}/api/v1/compare`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ query, type: "shopping", platforms }),
+                    signal: AbortSignal.timeout(180000)
+                });
+                if (!res.ok) throw new Error(`HTTP ${res.status}: ${await res.text()}`);
+                const data = await res.json();
+                renderResult(data);
+            } catch (e) {
+                showError(`比价失败: ${e.message}`);
+            } finally {
+                el.searchBtn.disabled = false;
+                el.searchBtn.textContent = "开始比价";
+            }
+        }
+
+        async function bootstrap() {
+            loadHistory();
+            renderHistory();
+            renderEmptyBoards();
+            await loadHealth();
+            try {
+                await loadCapabilities();
+            } catch (e) {
+                showError(`加载平台能力失败: ${e.message}`);
+            }
+        }
+
+        el.searchBtn.addEventListener("click", searchCompare);
+        el.queryInput.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") searchCompare();
+        });
+
+        bootstrap();
+    </script>
+</body>
+</html>

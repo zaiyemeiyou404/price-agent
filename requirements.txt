@@ -1,0 +1,25 @@
+# Web框架
+fastapi>=0.109.0
+uvicorn[standard]>=0.27.0
+
+# 爬虫
+playwright>=1.41.0
+playwright-stealth>=1.0.6
+fake-useragent>=1.4.0
+
+# 数据处理
+pydantic>=2.5.0
+pydantic-settings>=2.0.0
+python-dateutil>=2.8.0
+
+# 大模型调用
+openai>=1.10.0
+httpx>=0.26.0
+
+# 缓存
+redis>=5.0.0
+aiocache>=0.12.0
+
+# 工具
+python-dotenv>=1.0.0
+loguru>=0.7.0
