@@ -17,8 +17,9 @@ import sys
 from pathlib import Path
 from typing import Optional
 
-# 添加项目路径
-sys.path.insert(0, str(Path(__file__).parent))
+# 添加项目根路径
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(PROJECT_ROOT))
 
 from playwright.async_api import async_playwright, Page, Browser
 from loguru import logger
@@ -28,7 +29,7 @@ logger.remove()
 logger.add(sys.stderr, format="<green>{time:HH:mm:ss}</green> | <level>{message}</level>", level="INFO")
 
 # Cookie 存储目录
-COOKIE_DIR = Path(__file__).parent / "cookies"
+COOKIE_DIR = PROJECT_ROOT / "cookies"
 COOKIE_DIR.mkdir(parents=True, exist_ok=True)
 
 

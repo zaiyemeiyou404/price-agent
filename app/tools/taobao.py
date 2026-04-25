@@ -175,24 +175,23 @@ class TaobaoTool(BaseTool, BaseCrawler):
             if not cookies_loaded:
                 logger.warning("[淘宝] ⚠ 未加载Cookie，搜索结果可能受限")
                 logger.warning("[淘宝] 请运行: python scripts/login/login.py taobao qr")
+                try:
+                    await page.goto("https://www.taobao.com", wait_until="domcontentloaded", timeout=60000)
+                    if enable_preheat and preheat_seconds > 0 and self.headless:
+                        logger.info(f"[淘宝] 首页预热中: 保持 {preheat_seconds}s 后再搜索")
+                        await asyncio.sleep(preheat_seconds)
+                    else:
+                        await self._random_delay(2, 3)
+                except Exception as e:
+                    logger.warning(f"[淘宝] 访问首页超时: {e}")
 
-            try:
-                await page.goto("https://www.taobao.com", wait_until="domcontentloaded", timeout=60000)
-                if enable_preheat and preheat_seconds > 0 and self.headless:
-                    logger.info(f"[淘宝] 首页预热中: 保持 {preheat_seconds}s 后再搜索")
-                    await asyncio.sleep(preheat_seconds)
-                else:
-                    await self._random_delay(2, 3)
-            except Exception as e:
-                logger.warning(f"[淘宝] 访问首页超时: {e}")
+                if await self._check_login_required():
+                    logger.warning("[淘宝] ⚠ 检测到需要登录，结果可能为空")
+                    await self._capture_debug_artifacts(query, f"{attempt_tag}_login_required")
 
-            if await self._check_login_required():
-                logger.warning("[淘宝] ⚠ 检测到需要登录，结果可能为空")
-                await self._capture_debug_artifacts(query, f"{attempt_tag}_login_required")
-
-            # 人工接管窗口：先处理登录/验证，再进入搜索
-            if pre_search_manual_gate and not self.headless:
-                await self._wait_for_manual_gate(timeout_seconds=manual_gate_timeout)
+                # 仅在没有本地登录态时，才先停在首页等待人工接管。
+                if pre_search_manual_gate and not self.headless:
+                    await self._wait_for_manual_gate(timeout_seconds=manual_gate_timeout)
 
             url = f"https://s.taobao.com/search?q={quote(query)}"
             logger.info(f"[淘宝] ({attempt_tag}) 访问: {url}")
@@ -203,6 +202,10 @@ class TaobaoTool(BaseTool, BaseCrawler):
             except Exception as e:
                 logger.warning(f"[淘宝] 访问搜索页超时: {e}")
                 await self._random_delay(2, 3)
+
+            if await self._has_blocking_login_modal():
+                await self._dismiss_login_modal_if_present()
+                await self._random_delay(1, 2)
 
             has_captcha = await self._detect_captcha()
             if not has_captcha:
@@ -239,6 +242,9 @@ class TaobaoTool(BaseTool, BaseCrawler):
 
                 logger.info("[淘宝] 人工验证完成，继续执行解析")
                 await self._random_delay(1, 2)
+                recovered = await self._recover_search_page(url, query)
+                if recovered:
+                    await self._random_delay(1, 2)
 
             # 等待真实结果渲染，避免只解析到骨架屏
             ready = await self._wait_for_real_results(query=query, timeout_seconds=40)
@@ -292,11 +298,13 @@ class TaobaoTool(BaseTool, BaseCrawler):
                 logger.warning("[淘宝] 人工接管窗口超时，继续尝试搜索")
                 return False
 
+            await self._dismiss_login_modal_if_present()
             need_login = await self._check_login_required()
             has_search_box = await self._has_search_input()
+            modal_present = await self._has_blocking_login_modal()
 
-            # 人工接管阶段只关注登录是否完成，避免验证码误判导致长时间卡住
-            if not need_login or has_search_box:
+            # 首页经常弹未登录的拦截弹窗；若已具备搜索框且弹窗已消失，则继续搜索。
+            if (not need_login or has_search_box) and not modal_present:
                 logger.info("[淘宝] 人工接管完成，开始执行搜索")
                 await self._save_cookies()
                 return True
@@ -308,6 +316,79 @@ class TaobaoTool(BaseTool, BaseCrawler):
                 next_log_mark += 30
 
             await asyncio.sleep(2)
+
+    async def _has_blocking_login_modal(self) -> bool:
+        """检测淘宝首页是否存在阻塞搜索的登录弹窗。"""
+        if not self._page:
+            return False
+
+        selectors = [
+            "text=密码登录",
+            "text=短信登录",
+            "text=请输入手机号",
+            "text=扫码登录更安全",
+            "[class*='login']",
+            "[class*='Login']",
+            "[class*='dialog']",
+            "[class*='Dialog']",
+            "[role='dialog']",
+        ]
+
+        for frame in [self._page.main_frame] + list(self._page.frames):
+            for selector in selectors:
+                try:
+                    element = await frame.query_selector(selector)
+                    if not element:
+                        continue
+                    if await element.is_visible():
+                        return True
+                except Exception:
+                    continue
+        return False
+
+    async def _dismiss_login_modal_if_present(self) -> bool:
+        """尝试关闭淘宝首页的登录弹窗，避免人工接管阶段被遮罩卡住。"""
+        if not self._page:
+            return False
+
+        close_selectors = [
+            "button[aria-label='关闭']",
+            "button[title='关闭']",
+            "[aria-label='关闭']",
+            "[title='关闭']",
+            "[class*='close']",
+            "[class*='Close']",
+            ".close",
+            ".icon-close",
+            "text=关闭",
+        ]
+
+        try:
+            await self._page.keyboard.press("Escape")
+            await asyncio.sleep(0.3)
+        except Exception:
+            pass
+
+        closed = False
+        for frame in [self._page.main_frame] + list(self._page.frames):
+            for selector in close_selectors:
+                try:
+                    button = await frame.query_selector(selector)
+                    if not button or not await button.is_visible():
+                        continue
+                    await button.click(timeout=1000, force=True)
+                    await asyncio.sleep(0.8)
+                    closed = True
+                    break
+                except Exception:
+                    continue
+            if closed:
+                break
+
+        if closed and not await self._has_blocking_login_modal():
+            logger.info("[淘宝] 已自动关闭首页登录弹窗")
+            return True
+        return False
 
     async def _has_search_input(self) -> bool:
         """判断页面是否已具备可搜索状态"""
@@ -458,6 +539,42 @@ class TaobaoTool(BaseTool, BaseCrawler):
                 next_log_mark += 30
 
             await asyncio.sleep(2)
+
+    async def _recover_search_page(self, search_url: str, query: str) -> bool:
+        """
+        验证码处理后，淘宝偶尔会关闭原搜索页。
+        这里优先复用 context 中仍存活的标签页；如果都没了，则重新打开搜索页。
+        """
+        if not self._context:
+            return False
+
+        try:
+            if self._page and not self._page.is_closed():
+                return True
+        except Exception:
+            pass
+
+        try:
+            for candidate in reversed(self._context.pages):
+                try:
+                    if candidate and not candidate.is_closed():
+                        self._page = candidate
+                        logger.info("[淘宝] 验证后原页已关闭，已切换到存活页面继续")
+                        return True
+                except Exception:
+                    continue
+        except Exception:
+            pass
+
+        try:
+            self._page = await self._context.new_page()
+            self._page.set_default_timeout(self.timeout)
+            await self._page.goto(search_url, wait_until="domcontentloaded", timeout=60000)
+            logger.info(f"[淘宝] 验证后重开搜索页: {query}")
+            return True
+        except Exception as e:
+            logger.warning(f"[淘宝] 验证后恢复搜索页失败: {e}")
+            return False
 
     async def _capture_debug_artifacts(self, query: str, stage: str):
         """保存失败现场，便于定位反爬、登录态和选择器问题"""

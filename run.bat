@@ -39,7 +39,11 @@ echo.
 echo  按 Ctrl+C 停止服务
 echo.
 
-python -m uvicorn app.main:app --reload --port 8000
+python -m uvicorn app.main:app --reload --port 8000 ^
+  --reload-exclude "cookies/*" ^
+  --reload-exclude "debug_output/*" ^
+  --reload-exclude "scripts/login/cookies/*" ^
+  --reload-exclude "__pycache__/*"
 
 if errorlevel 1 (
     echo.
